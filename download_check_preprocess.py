@@ -13,6 +13,7 @@ from io import StringIO
 
 from aiohttp.connector import TCPConnector
 from aiohttp.client import ClientSession, ClientError
+from numpy import empty, float64, savez_compressed
 
 from config import PROXY, USER_AGENT
 
@@ -88,7 +89,7 @@ def get_rows_one_file(date_str, name):
 def get_rows(name):
     one_day = timedelta(days=1)
     today = (
-        datetime.now(timezone.utc) - one_day
+        datetime.now(timezone.utc) - one_day - one_day
     ).replace(hour=0, minute=0, second=0, microsecond=0)
     d = datetime(2020, 6, 1, tzinfo=timezone.utc)
     while d <= today:
@@ -97,6 +98,34 @@ def get_rows(name):
         yield from get_rows_one_file(date_str, name)
         print(f'preprocess {date_str} done.')
         d += one_day
+
+def preprocess(name):
+    rows = get_rows(name)
+    row = next(rows)
+    one_day = timedelta(days=1)
+    t = int(datetime(2020, 6, 1, tzinfo=timezone.utc).timestamp())
+    now = int(
+        (
+            datetime.now(timezone.utc) - one_day
+        ).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+    )
+    data_t = timedelta(milliseconds=int(row['ts'])).total_seconds()
+    latest_price = row['price']
+    current_price = row['price']
+    skip_flag = False
+    while t < now:
+        if not skip_flag:
+            try:
+                while data_t < t:
+                    row = next(rows)
+                    data_t = timedelta(milliseconds=int(row['ts'])).total_seconds()
+                    latest_price = current_price
+                    current_price = row['price']
+            except StopIteration:
+                skip_flag = True
+                latest_price = current_price
+        yield float64(latest_price)
+        t += 1
 
 async def main():
     name = input('name = ')
@@ -113,7 +142,7 @@ async def main():
     makedirs(Path('./data/cache') / name, exist_ok=True)
     one_day = timedelta(days=1)
     today = (
-        datetime.now(timezone.utc) - one_day
+        datetime.now(timezone.utc) - one_day - one_day
     ).replace(hour=0, minute=0, second=0, microsecond=0)
     tasks = []
     d = datetime(2020, 6, 1, tzinfo=timezone.utc)
@@ -132,34 +161,16 @@ async def main():
     print('download and check done.')
 
     print('preprocess ...')
-    with open(Path('./data') / f'{name}.csv', 'w', newline='') as f:
-        rows = get_rows(name)
-        row = next(rows)
-        t = int(datetime(2020, 6, 1, tzinfo=timezone.utc).timestamp())
-        now = int(
-            (
-                datetime.now(timezone.utc)
-            ).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
-        )
-        data_t = timedelta(milliseconds=int(row['ts'])).total_seconds()
-        latest_price = row['price']
-        current_price = row['price']
-        skip_flag = False
-        while t < now:
-            if not skip_flag:
-                try:
-                    while data_t < t:
-                        row = next(rows)
-                        data_t = timedelta(milliseconds=int(row['ts'])).total_seconds()
-                        latest_price = current_price
-                        current_price = row['price']
-                except StopIteration:
-                    skip_flag = True
-                    latest_price = current_price
-            price = latest_price.split('.')
-            price[1] = price[1][:2]
-            f.write('.'.join(price) + '\n')
-            t += 1
+    length = int(
+        (datetime.now(timezone.utc) - one_day)
+        .replace(hour=0, minute=0, second=0, microsecond=0)
+        .timestamp()
+    ) - int(datetime(2020, 6, 1, tzinfo=timezone.utc).timestamp())
+    arr = empty((length,), dtype=float64)
+    for i, v in enumerate(preprocess(name)):
+        arr[i] = v
+    print('save compressed ...')
+    savez_compressed(Path('./data') / f'{name}', arr)
     print('preprocess done.')
 
     print('done.')
