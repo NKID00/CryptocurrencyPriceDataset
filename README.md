@@ -1,4 +1,4 @@
-## Cryptocurrency price dataset
+## CryptocurrencyPriceDataset
 
 Cryptocurrency price dataset based on Huobi Global exchange's historical trade data.
 
