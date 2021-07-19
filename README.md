@@ -1,6 +1,6 @@
 ## CryptocurrencyPriceDataset
 
-Cryptocurrency price dataset based on Huobi Global exchange's historical trade data.
+Cryptocurrency price dataset based on [Huobi Global exchange's historical trade data](https://github.com/hbdmapi/huobi_public_data).
 
 ## Build
 
@@ -15,4 +15,4 @@ Raw data is stored in `./data/cache/<Name>/`, preprocessed data is generated in 
 
 ## Preprocessed data
 
-Preprocessed data is a 1d numpy array which has prices ordered by timestamp. Each value is the price 1 second later than the pervious one. The first price matches timestamp 0 (2020-06-01T00:00:00.000000Z).
+Preprocessed data is a 1d NumPy array which has prices ordered by timestamp. Each value is the price 1 second later than the pervious one. The first price matches timestamp 0 (2020-06-01T00:00:00.000000Z).
