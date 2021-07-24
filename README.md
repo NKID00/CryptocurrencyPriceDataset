@@ -32,4 +32,4 @@ It is possible to download the preprocessed dataset from [the release page](http
 
 ## Preprocessed dataset
 
-Preprocessed dataset file contains a 1d NumPy array `arr_0` which has prices ordered by timestamp. Each value is the price 1 second later than the pervious one. The first price matches timestamp 0 (2020-06-01T00:00:00.000000Z).
+Preprocessed dataset file contains a 1d NumPy array `arr_0` which has prices ordered by timestamp. Each value is the price 1 second later than the pervious one. The first price matches timestamp 0 (2020-06-01T00:00:00+08:00 or 2020-05-31T16:00:00Z).
